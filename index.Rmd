@@ -1,30 +1,225 @@
 ---
-title: "Practical Machine Learning Course Project"
+title: "Automated Detection of Human Activity"
 author: "Simeon Evlakhov"
-date: '28 июля 2017 г '
+date: '23 july 2017 г '
 output: html_document
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+# Coursera Course Project
+
+## Abstract
+
+In this report we develop a model for automated detection of human activity.  
+
+## Introduction
+
+Nowadays, wearable devices such as *Jawbone Up*, *Nike FuelBand*, and *Fitbit* became widespread and relatively cheap, so it is  possible to collect a large amount of data about personal activity. These data can be use in various fields, particularly in improvement of fitness trainings. Different activities correspond to the different patterns of data, so it's possible to detect the type of the activity by looking at the data.
+
+In this paper we will try to predict the type of barbell activity (encoded by letters "A", "B", "C", "D" or "E") basing on the data from  accelerometers on the belt, forearm, arm, and dumbbell of 6 participants.
+The accelerometers are located as it's shown on the following figure:
+
+```{r, echo=FALSE,  out.width="250px"}
+knitr::include_graphics("on-body-sensing-schema.png")
 ```
 
-## R Markdown
+More information is available here: http://groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset).
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+## Data Files
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+The data are separated into two sets: the training set and the test set. They can be downloaded from the following URLs
 
-```{r cars}
-summary(cars)
+```{r, echo=TRUE}
+train_file_url = "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
 ```
 
-## Including Plots
+If we still have no local copy of the data file, now it's time to download it to our PC:
 
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
+```{r, echo=TRUE}
+train_file_name = "pml-training.csv"
+if (!file.exists(train_file_name)){
+  download.file(train_file_url, train_file_name)
+}
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+## Data Description
+
+Let's load our datasets into R environment. As many columns contains invalid data, we set **as.is**
+parameter equal to **TRUE**, so they will be considered as "characters" rather than "factors".
+
+```{r, echo=TRUE}
+   pml_training <- read.table("pml-training.csv", header=TRUE, sep=",", as.is = TRUE)
+```
+The table is rather big:
+```{r, echo=TRUE}
+  dim(pml_training)
+```
+
+We won't give here complete description of the columns, if you want you can refer 
+to the original paper of Velloso et al.: 
+[Qualitative Activity Recognition of Weight Lifting Exercises](http://groupware.les.inf.puc-rio.br/public/papers/2013.Velloso.QAR-WLE.pdf)
+or see the Appendix. 
+
+The most important column for us is the last one, **classe**, that contains information about activiy. Each letter in this column corresponds to a cirtain type of the activity: excercises completed  exactly according to the specification (Class A), throwing the elbows to the front (Class B), lifting the dumbbellonly halfway (Class C), lowering the dumbbell only halfway (Class D) and throwing the hips to the front (Class E).
+
+ 
+## Data Preprocessing
+
+First of all, we will load libraries, that we will use later
+```{r, echo=TRUE, message=FALSE}
+   library(plyr)
+   library(dplyr)
+   library(caret)
+```
+
+Columns from 1 to 8 contain techincal data. 
+```{r, echo=TRUE}
+  names(pml_training)[1:8]
+```
+It was stated on the PML Course Forum, that these data allows to predict the result with 100% 
+accuracy (for the cross-validation set), but in real life we 
+can hardly get all this stuff, so it's better to ignore it completely (we will do it in a second). 
+
+Columns from 8 to 159 contains numeric info with tons of incorrect data, so some of them were interpreted as "characters". Now we will fix this problem:
+```{r, echo=TRUE, warning=FALSE}
+for (i in 8:159){
+  if (class(pml_training[,i])=="character"){
+    pml_training[,i] <- as.numeric(pml_training[,i]) 
+  }
+}
+```
+
+Now it is time to remove unnecessary columns, i.e. first 7 columns and columns that contains 
+different types of summaries: mean,  variance, standard deviation, max, min, amplitude and kurtosis. These columns contain a lot of  "NAs" and it's rather hard to use them in real life.
+
+```{r, echo=TRUE}
+summary_columns <- grep("(max)|(min)|(kurtosis)|(skewness)|(amplitude)|(var)|(avg)|(stddev)",
+                        names(pml_training))
+```
+
+```{r, echo=TRUE}
+ filtered_pml_training <- pml_training[, -(c(1:7, summary_columns))]
+```
+
+Finally, we should divide our set into training and cross validation subsets. We will use the last one to
+choose the appropriate model:
+```{r, echo=TRUE}
+  set.seed(2583)
+  inTrain <- createDataPartition(y=filtered_pml_training$classe, p=0.8, list=FALSE)
+  training <- filtered_pml_training[inTrain,]
+  cross_validation <- filtered_pml_training[-inTrain,]
+```
+
+## Models
+
+It's possible to use different models for prediction: SVM, Boosting, Random Forests etc. 
+It is mentions in  the paper of Velloso et all that all of them give considerably good results. 
+In this paper we will compare only two methods: Gradient Boosting Machine and Random Forests. 
+
+## Training
+
+First, we split our data frame into feature columns and "prediction" column:
+```{r, echo=TRUE}
+  x <- training[,-53]
+  y <- training[, 53]
+```  
+
+### Parallelizing
+
+The main practical problem with training is that it takes a lot of time. To make it run faster,
+it's good idea to use parallel computations. The following code is 
+
+
+```{r, echo=TRUE, eval=FALSE}
+  library(parallel)
+  library(doParallel)
+```
+
+```{r, echo=TRUE, eval=FALSE}
+  cluster <- makeCluster(detectCores() - 1)
+  registerDoParallel(cluster)
+```
+
+```{r, echo=TRUE, eval=FALSE}
+  fitControl <- trainControl(method="cv", number=10, allowParallel = TRUE)
+```
+
+```{r, echo=TRUE, eval=FALSE}
+  modFitRf <- train(x,y,  method="rf", data=training, trControl=fitControl)
+```
+```{r, echo=TRUE, eval=FALSE}
+  modFitGbm <-train(x, y,  method="gbm", verbose=FALSE, trControl = fitControl)
+```
+
+```{r, echo=TRUE, eval=FALSE}
+  stopCluster(cluster)
+  registerDoSEQ()
+```
+
+```{r, echo=FALSE}
+  getwd()
+  load("courseraModelRf.rda")
+  load("courseraModelGbm.rda")
+```
+
+## Testing
+
+
+Now let's compare the results of the to methods. To do this, we should run our models on 
+cross validation sets:
+
+```{r, echo=TRUE, message=FALSE}
+  predRf <- predict(modFitRf, cross_validation)
+  predGbm <- predict(modFitGbm, cross_validation)
+```
+Confusion matrices:
+```{r, echo=TRUE}
+  confMxRf <- confusionMatrix(predRf, cross_validation$classe)
+  confMxGbm <- confusionMatrix(predGbm, cross_validation$classe)
+```
+
+
+```{r, echo=TRUE}
+  confMxRf$overall
+```
+
+```{r, echo=TRUE}
+  confMxGbm$overall
+```
+We see, that 
+
+Here are diagrams, representing confusion matrices:
+```{r, echo=TRUE}
+df <- as.data.frame(confMxRf$table)
+ggplot(data =  df, mapping = aes(x = Prediction, y = Reference)) +
+  geom_tile(aes(fill = Freq), colour = "white") +
+  geom_text(aes(label = sprintf("%1.0f", Freq)), vjust = 1) +
+  scale_fill_gradient(low = "white", high = "purple3") +
+  theme_bw() + theme(legend.position = "none")
+```
+
+```{r, echo=TRUE}
+dfGbm <- as.data.frame(confMxGbm$table)
+ggplot(data =  dfGbm, mapping = aes(x = Prediction, y = Reference)) +
+  geom_tile(aes(fill = Freq), colour = "white") +
+  geom_text(aes(label = sprintf("%1.0f", Freq)), vjust = 1) +
+  scale_fill_gradient(low = "white", high = "purple3") +
+  theme_bw() + theme(legend.position = "none")
+```
+
+## Conclusion
+
+We can see
+
+## References
+
+1. http://groupware.les.inf.puc-rio.br/har
+2. Ugulino, W.; Cardador, D.; Vega, K.; Velloso, E.; Milidiu, R.; Fuks, H. Wearable Computing: Accelerometers' Data Classification of Body Postures and Movements. Proceedings of 21st Brazilian Symposium on Artificial Intelligence. Advances in Artificial Intelligence - SBIA 2012. In: Lecture Notes in Computer Science. , pp. 52-61. Curitiba, PR: Springer Berlin / Heidelberg, 2012. ISBN 978-3-642-34458-9. DOI: 10.1007/978-3-642-34459-6_6.
+3. Qualitative Activity Recognition of Weight Lifting Exercises: http://groupware.les.inf.puc-rio.br/public/papers/2013.Velloso.QAR-WLE.pdf
+
+## Appendix 
+
+**You don't have to read this part.** 
+
+```{r, echo=TRUE}
+  str(pml_training, list.len=200)
+```
