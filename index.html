@@ -138,7 +138,7 @@ $(document).ready(function () {
 </div>
 <div id="data-files" class="section level2">
 <h2>Data Files</h2>
-<p>The main data file can be downloaded from the following URL:</p>
+<p>The main data file can be obtained from the following URL:</p>
 <pre class="r"><code>train_file_url = &quot;https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv&quot;</code></pre>
 <p>If we still have no local copy of the data, now it’s time to download them to our PC:</p>
 <pre class="r"><code>train_file_name = &quot;pml-training.csv&quot;
@@ -195,21 +195,21 @@ if (!file.exists(train_file_name)){
 </div>
 <div id="training" class="section level2">
 <h2>Training</h2>
-<p>First, we split our data frame into feature columns and “prediction” column:</p>
+<p>First, we split our data frame into feature columns and target column:</p>
 <pre class="r"><code>  x &lt;- training[,-53]
   y &lt;- training[, 53]</code></pre>
 <div id="parallelizing" class="section level3">
 <h3>Parallelizing</h3>
 <p>The main technical problem with training is that it takes a lot of time. To make it run faster, it is a good idea to use parallel computations. The following three code chunks was proposed by Leonard Greski, Course Mentor on <a href="the%20PML%20Course%20Forum">https://www.coursera.org/learn/practical-machine-learning/discussions/weeks/4/threads/ijErxyavEee6ugr9raNa5As</a></p>
-<p>Includig libraries:</p>
+<p>We have to include libraries:</p>
 <pre class="r"><code>  library(parallel)
   library(doParallel)</code></pre>
-<p>Creating clusters:</p>
+<p>create clusters:</p>
 <pre class="r"><code>  cluster &lt;- makeCluster(detectCores() - 1)
   registerDoParallel(cluster)</code></pre>
-<p>Tuning training parameters:</p>
+<p>and tune training parameters:</p>
 <pre class="r"><code>  fitControl &lt;- trainControl(method=&quot;cv&quot;, number=10, allowParallel = TRUE)</code></pre>
-<p>Finally, we can run our training (takes about an hour for each model on my laptop):</p>
+<p>Now we can run our training procedure (takes about an hour for each model on my laptop, Intel Pentium N3710:</p>
 <pre class="r"><code>  modFitRf &lt;- train(x,y,  method=&quot;rf&quot;, data=training, trControl=fitControl)</code></pre>
 <pre class="r"><code>  modFitGbm &lt;-train(x, y,  method=&quot;gbm&quot;, verbose=FALSE, trControl = fitControl)</code></pre>
 <p>The following code is due to Leonard Greski. It simply stops our parallel infrastructure.</p>

@@ -149,7 +149,7 @@ and tune training parameters:
   fitControl <- trainControl(method="cv", number=10, allowParallel = TRUE)
 ```
 
-Now we can run our training (takes about an hour for each model on my laptop, Intel Pentium N3710: 
+Now we can run our training procedure (takes about an hour for each model on my laptop, Intel Pentium N3710: 
 
 ```{r, echo=TRUE, eval=FALSE}
   modFitRf <- train(x,y,  method="rf", data=training, trControl=fitControl)
