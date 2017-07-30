@@ -1,7 +1,7 @@
 ---
 title: "Automated Detection of Human Activity"
 author: "Simeon Evlakhov"
-date: '23 july 2017 г '
+date: '28 july 2017 г '
 output: html_document
 ---
 
@@ -26,13 +26,13 @@ More information is available here: http://groupware.les.inf.puc-rio.br/har (see
 
 ## Data Files
 
-The data are separated into two sets: the training set and the test set. They can be downloaded from the following URLs
+The main data file can be downloaded from the following URL:
 
 ```{r, echo=TRUE}
 train_file_url = "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
 ```
 
-If we still have no local copy of the data file, now it's time to download it to our PC:
+If we still have no local copy of the data,  now it's time to download them to our PC:
 
 ```{r, echo=TRUE}
 train_file_name = "pml-training.csv"
@@ -43,7 +43,7 @@ if (!file.exists(train_file_name)){
 
 ## Data Description
 
-Let's load our datasets into R environment. As many columns contains invalid data, we set **as.is**
+Let's load our dataset into R environment. As many columns contains invalid data, we set **as.is**
 parameter equal to **TRUE**, so they will be considered as "characters" rather than "factors".
 
 ```{r, echo=TRUE}
@@ -61,6 +61,11 @@ or see the Appendix.
 
 The most important column for us is the last one, **classe**, that contains information about activiy. Each letter in this column corresponds to a cirtain type of the activity: excercises completed  exactly according to the specification (Class A), throwing the elbows to the front (Class B), lifting the dumbbellonly halfway (Class C), lowering the dumbbell only halfway (Class D) and throwing the hips to the front (Class E).
 
+```{r, echo=TRUE} 
+  classesTbl <- table(pml_training$classe)
+  {barplot(classesTbl, col=c("red4", "plum", "orchid","purple", "darkorchid4"))
+  title(main="Total amount of records for each class")}
+```
  
 ## Data Preprocessing
 
@@ -68,6 +73,7 @@ First of all, we will load libraries, that we will use later
 ```{r, echo=TRUE, message=FALSE}
    library(plyr)
    library(dplyr)
+   library(knitr)
    library(caret)
 ```
 
@@ -75,9 +81,9 @@ Columns from 1 to 8 contain techincal data.
 ```{r, echo=TRUE}
   names(pml_training)[1:8]
 ```
-It was stated on the PML Course Forum, that these data allows to predict the result with 100% 
+It was stated on the PML Course Forum, that these data allows us to predict the result with 100% 
 accuracy (for the cross-validation set), but in real life we 
-can hardly get all this stuff, so it's better to ignore it completely (we will do it in a second). 
+can hardly get all this information, so it's better to ignore it completely (we will do it in a second). 
 
 Columns from 8 to 159 contains numeric info with tons of incorrect data, so some of them were interpreted as "characters". Now we will fix this problem:
 ```{r, echo=TRUE, warning=FALSE}
@@ -88,8 +94,8 @@ for (i in 8:159){
 }
 ```
 
-Now it is time to remove unnecessary columns, i.e. first 7 columns and columns that contains 
-different types of summaries: mean,  variance, standard deviation, max, min, amplitude and kurtosis. These columns contain a lot of  "NAs" and it's rather hard to use them in real life.
+It is time to remove unnecessary columns, i.e. first 7 columns and columns that contains 
+different types of summaries: mean,  variance, standard deviation, max, min, amplitude and kurtosis. These columns contain a lot of  "NAs" and it is rather hard to use them in real life.
 
 ```{r, echo=TRUE}
 summary_columns <- grep("(max)|(min)|(kurtosis)|(skewness)|(amplitude)|(var)|(avg)|(stddev)",
@@ -112,7 +118,7 @@ choose the appropriate model:
 ## Models
 
 It's possible to use different models for prediction: SVM, Boosting, Random Forests etc. 
-It is mentions in  the paper of Velloso et all that all of them give considerably good results. 
+It is mentioned in  the paper of Velloso et all that all of them give considerably good results. 
 In this paper we will compare only two methods: Gradient Boosting Machine and Random Forests. 
 
 ## Training
@@ -125,23 +131,25 @@ First, we split our data frame into feature columns and "prediction" column:
 
 ### Parallelizing
 
-The main practical problem with training is that it takes a lot of time. To make it run faster,
-it's good idea to use parallel computations. The following code is 
+The main technical problem with training is that it takes a lot of time. To make it run faster,
+it is a good idea to use parallel computations. The following three code chunks was  proposed by Leonard Greski,  Course Mentor on  [https://www.coursera.org/learn/practical-machine-learning/discussions/weeks/4/threads/ijErxyavEee6ugr9raNa5As](the PML Course Forum)
 
-
+Includig libraries:
 ```{r, echo=TRUE, eval=FALSE}
   library(parallel)
   library(doParallel)
 ```
-
+Creating clusters:
 ```{r, echo=TRUE, eval=FALSE}
   cluster <- makeCluster(detectCores() - 1)
   registerDoParallel(cluster)
 ```
-
+Tuning training parameters:
 ```{r, echo=TRUE, eval=FALSE}
   fitControl <- trainControl(method="cv", number=10, allowParallel = TRUE)
 ```
+
+Finally, we can run our training (takes about an hour for each model on my laptop): 
 
 ```{r, echo=TRUE, eval=FALSE}
   modFitRf <- train(x,y,  method="rf", data=training, trControl=fitControl)
@@ -149,14 +157,13 @@ it's good idea to use parallel computations. The following code is
 ```{r, echo=TRUE, eval=FALSE}
   modFitGbm <-train(x, y,  method="gbm", verbose=FALSE, trControl = fitControl)
 ```
-
-```{r, echo=TRUE, eval=FALSE}
+The following code is due to Leonard Greski. It simply stops our parallel infrastructure.
+```{r, echo=TRUE, eval=FALSE, message=FALSE}
   stopCluster(cluster)
   registerDoSEQ()
 ```
 
 ```{r, echo=FALSE}
-  getwd()
   load("courseraModelRf.rda")
   load("courseraModelGbm.rda")
 ```
@@ -171,13 +178,21 @@ cross validation sets:
   predRf <- predict(modFitRf, cross_validation)
   predGbm <- predict(modFitGbm, cross_validation)
 ```
-Confusion matrices:
+
+Here is some info about the models:
+```{r, echo=TRUE}
+  kable(modFitRf$results)
+  kable(modFitGbm$results)
+```
+
+We can see, that the first model (Random Forests) is by far more accurate than Gbm, at least on the
+training set. To see the results on the cross validation set, let's build confusion matrices:
 ```{r, echo=TRUE}
   confMxRf <- confusionMatrix(predRf, cross_validation$classe)
   confMxGbm <- confusionMatrix(predGbm, cross_validation$classe)
 ```
 
-
+Some overall info:
 ```{r, echo=TRUE}
   confMxRf$overall
 ```
@@ -185,7 +200,15 @@ Confusion matrices:
 ```{r, echo=TRUE}
   confMxGbm$overall
 ```
-We see, that 
+And performance tables:
+```{r, echo=TRUE}
+  kable(confMxRf$byClass, digits=3)
+```
+
+```{r, echo=TRUE}
+  kable(confMxGbm$byClass, digits=3)
+```
+It's clear, that the Random Forests are more accurate.
 
 Here are diagrams, representing confusion matrices:
 ```{r, echo=TRUE}
