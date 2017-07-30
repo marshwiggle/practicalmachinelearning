@@ -215,7 +215,6 @@ if (!file.exists(train_file_name)){
 <p>The following code is due to Leonard Greski. It simply stops our parallel infrastructure.</p>
 <pre class="r"><code>  stopCluster(cluster)
   registerDoSEQ()</code></pre>
-<pre><code>## [1] &quot;/home/simeon/Projects/Data Science/datasciencecoursera/practicalmachinelearning&quot;</code></pre>
 </div>
 </div>
 <div id="testing" class="section level2">
@@ -376,9 +375,10 @@ if (!file.exists(train_file_name)){
 </tr>
 </tbody>
 </table>
-<p>Confusion matrices:</p>
+<p>We can see, that the first model (Random Forests) is by far more accurate than Gbm, at least on the training set. To see the results on the cross validation set, let’s build confusion matrices:</p>
 <pre class="r"><code>  confMxRf &lt;- confusionMatrix(predRf, cross_validation$classe)
   confMxGbm &lt;- confusionMatrix(predGbm, cross_validation$classe)</code></pre>
+<p>Some overall info:</p>
 <pre class="r"><code>  confMxRf$overall</code></pre>
 <pre><code>##       Accuracy          Kappa  AccuracyLower  AccuracyUpper   AccuracyNull 
 ##      0.9979607      0.9974205      0.9959858      0.9991192      0.2844762 
@@ -389,6 +389,7 @@ if (!file.exists(train_file_name)){
 ##      0.9640581      0.9545188      0.9577496      0.9696625      0.2844762 
 ## AccuracyPValue  McnemarPValue 
 ##      0.0000000            NaN</code></pre>
+<p>And performance tables:</p>
 <pre class="r"><code>  kable(confMxRf$byClass, digits=3)</code></pre>
 <table>
 <thead>
@@ -569,6 +570,20 @@ if (!file.exists(train_file_name)){
 <td align="right">0.180</td>
 <td align="right">0.986</td>
 </tr>
+<tr class="even">
+<td>It’s clear,</td>
+<td align="right">that the Rand</td>
+<td align="right">om Forests wit</td>
+<td align="right">h their 99% accur</td>
+<td align="right">acy is much more</td>
+<td align="right">precise mode</td>
+<td align="right">l than Gb</td>
+<td align="right">m.</td>
+<td align="right"></td>
+<td align="right"></td>
+<td align="right"></td>
+<td align="right"></td>
+</tr>
 </tbody>
 </table>
 <p>Here are diagrams, representing confusion matrices:</p>
@@ -589,7 +604,7 @@ ggplot(data =  dfGbm, mapping = aes(x = Prediction, y = Reference)) +
 </div>
 <div id="conclusion" class="section level2">
 <h2>Conclusion</h2>
-<p>We can see</p>
+<p>It was shown that using Random Forest model allows to predict activity class basing on accelerometer data with a rather high precision of 99%.</p>
 </div>
 <div id="references" class="section level2">
 <h2>References</h2>

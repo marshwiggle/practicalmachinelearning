@@ -26,7 +26,7 @@ More information is available here: http://groupware.les.inf.puc-rio.br/har (see
 
 ## Data Files
 
-The main data file can be downloaded from the following URL:
+The main data file can be obtained from the following URL:
 
 ```{r, echo=TRUE}
 train_file_url = "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
@@ -123,7 +123,7 @@ In this paper we will compare only two methods: Gradient Boosting Machine and Ra
 
 ## Training
 
-First, we split our data frame into feature columns and "prediction" column:
+First, we split our data frame into feature columns and target column:
 ```{r, echo=TRUE}
   x <- training[,-53]
   y <- training[, 53]
@@ -134,22 +134,22 @@ First, we split our data frame into feature columns and "prediction" column:
 The main technical problem with training is that it takes a lot of time. To make it run faster,
 it is a good idea to use parallel computations. The following three code chunks was  proposed by Leonard Greski,  Course Mentor on  [https://www.coursera.org/learn/practical-machine-learning/discussions/weeks/4/threads/ijErxyavEee6ugr9raNa5As](the PML Course Forum)
 
-Includig libraries:
+We have to include libraries:
 ```{r, echo=TRUE, eval=FALSE}
   library(parallel)
   library(doParallel)
 ```
-Creating clusters:
+create clusters:
 ```{r, echo=TRUE, eval=FALSE}
   cluster <- makeCluster(detectCores() - 1)
   registerDoParallel(cluster)
 ```
-Tuning training parameters:
+and tune training parameters:
 ```{r, echo=TRUE, eval=FALSE}
   fitControl <- trainControl(method="cv", number=10, allowParallel = TRUE)
 ```
 
-Finally, we can run our training (takes about an hour for each model on my laptop): 
+Now we can run our training (takes about an hour for each model on my laptop, Intel Pentium N3710: 
 
 ```{r, echo=TRUE, eval=FALSE}
   modFitRf <- train(x,y,  method="rf", data=training, trControl=fitControl)
@@ -208,7 +208,7 @@ And performance tables:
 ```{r, echo=TRUE}
   kable(confMxGbm$byClass, digits=3)
 ```
-It's clear, that the Random Forests are more accurate.
+It's clear, that the Random Forests with their 99% accuracy is much more precise model than Gbm.
 
 Here are diagrams, representing confusion matrices:
 ```{r, echo=TRUE}
@@ -231,7 +231,8 @@ ggplot(data =  dfGbm, mapping = aes(x = Prediction, y = Reference)) +
 
 ## Conclusion
 
-We can see
+It was shown that using Random Forest model allows to predict activity class basing on accelerometer 
+data with a rather high precision of 99%.
 
 ## References
 
