@@ -232,7 +232,7 @@ ggplot(data =  dfGbm, mapping = aes(x = Prediction, y = Reference)) +
 ## Conclusion
 
 It was shown that using Random Forest model allows to predict activity class basing on accelerometer 
-data with a rather high precision of 99%.
+data with a rather high accuracy of 99%. The accuracy on the test set is 100%.
 
 ## References
 
