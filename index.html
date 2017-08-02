@@ -570,22 +570,9 @@ if (!file.exists(train_file_name)){
 <td align="right">0.180</td>
 <td align="right">0.986</td>
 </tr>
-<tr class="even">
-<td>It’s clear,</td>
-<td align="right">that the Rand</td>
-<td align="right">om Forests wit</td>
-<td align="right">h their 99% accur</td>
-<td align="right">acy is much more</td>
-<td align="right">precise mode</td>
-<td align="right">l than Gb</td>
-<td align="right">m.</td>
-<td align="right"></td>
-<td align="right"></td>
-<td align="right"></td>
-<td align="right"></td>
-</tr>
 </tbody>
 </table>
+<p>It’s clear, that the Random Forests with their 99% accuracy is much more precise model than Gbm.</p>
 <p>Here are diagrams, representing confusion matrices:</p>
 <pre class="r"><code>df &lt;- as.data.frame(confMxRf$table)
 ggplot(data =  df, mapping = aes(x = Prediction, y = Reference)) +
@@ -604,7 +591,7 @@ ggplot(data =  dfGbm, mapping = aes(x = Prediction, y = Reference)) +
 </div>
 <div id="conclusion" class="section level2">
 <h2>Conclusion</h2>
-<p>It was shown that using Random Forest model allows to predict activity class basing on accelerometer data with a rather high precision of 99%.</p>
+<p>It was shown that using Random Forest model allows to predict activity class basing on accelerometer data with a rather high accuracy of 99%. The accuracy on the test set is 100%.</p>
 </div>
 <div id="references" class="section level2">
 <h2>References</h2>

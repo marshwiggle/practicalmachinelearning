@@ -208,6 +208,7 @@ And performance tables:
 ```{r, echo=TRUE}
   kable(confMxGbm$byClass, digits=3)
 ```
+
 It's clear, that the Random Forests with their 99% accuracy is much more precise model than Gbm.
 
 Here are diagrams, representing confusion matrices:
